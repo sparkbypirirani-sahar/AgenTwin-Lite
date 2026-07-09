@@ -1,6 +1,36 @@
+
 """
 Project: AgenTwin-Lite - Cyber Digital Twin
-Stage 5: Multi-Attack Simulation
+Stage 6: CLI Dashboard + Multi-Attack Simulation
+
+Description:
+    This module implements a dynamic Cyber Digital Twin for network security simulation.
+    It models network devices as a graph and simulates realistic cyber attacks with
+    Intrusion Detection System (IDS) response and automated isolation.
+
+Main Features:
+    - Graph-based network topology modeling
+    - Dynamic device attributes (status, risk level, load)
+    - Multi-stage attack simulation with configurable intensity
+    - IDS detection with probabilistic success rate
+    - Automated isolation of compromised devices
+    - Real-time CLI Dashboard for monitoring network health
+    - Event logging and visualization (matplotlib)
+
+Current Capabilities:
+    - Simulate sequential attacks on multiple targets
+    - Visual feedback through color-coded nodes (Healthy/Warning/Compromised/Isolated)
+    - Live CLI dashboard showing device status, risk, and load
+    - Comprehensive event logging with timestamps
+
+Author: [نام شما]
+Version: 0.6
+Last Updated: 2026-07-09
+"""
+"""
+
+Project: AgenTwin-Lite - Cyber Digital Twin
+Stage 6: CLI Dashboard + Multi-Attack Simulation
 """
 
 import networkx as nx
@@ -38,7 +68,6 @@ def log_event(event_type, description):
     event_log.append(entry)
     print(entry)
 
-# ==================== Isolation ====================
 def isolate_node(target):
     if target in G.nodes:
         G.nodes[target]['status'] = 'Isolated'
@@ -66,7 +95,6 @@ def simulate_attack(G, attacker, target, intensity="Medium"):
 
     log_event("ATTACK", f"{attacker} attacked {target} ({intensity})")
 
-    # IDS Detection & Response
     if G.has_edge("IDS", target) or G.has_edge("IDS", "Router"):
         if randint(1, 100) > 25:
             log_event("IDS", f"Attack detected on {target}")
@@ -76,47 +104,62 @@ def simulate_attack(G, attacker, target, intensity="Medium"):
         else:
             log_event("IDS", f"Failed to detect attack on {target}")
 
+# ==================== داشبورد متنی ====================
+def show_cli_dashboard():
+    print("\n" + "="*60)
+    print("🔍 CYBER DIGITAL TWIN - CLI DASHBOARD")
+    print("="*60)
+    print(f"زمان: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"تعداد نودها: {G.number_of_nodes()} | تعداد یال‌ها: {G.number_of_edges()}")
+    print("-" * 60)
+    
+    print(f"{'دستگاه':<12} {'وضعیت':<12} {'ریسک':<8} {'بار (%)':<10}")
+    print("-" * 60)
+    
+    for node in sorted(G.nodes()):
+        if node == "Attacker":
+            continue
+        data = G.nodes[node]
+        status = data.get('status', 'Unknown')
+        risk = data.get('risk', 0)
+        load = data.get('load', 0)
+        
+        status_symbol = "🟢" if status == "Healthy" else "🟠" if status == "Warning" else "🔴" if status in ["Compromised", "Malicious"] else "⚪"
+        print(f"{status_symbol} {node:<12} {status:<12} {risk:>3}%     {load:>3}%")
+    
+    print("-" * 60)
+    print(f"وضعیت IDS: {G.nodes['IDS'].get('status', 'Unknown')}")
+    print(f"تعداد وقایع ثبت شده: {len(event_log)}")
+    print("="*60)
+
 # ==================== نمایش گراف ====================
 def draw_digital_twin(G, title="Cyber Digital Twin"):
     pos = nx.spring_layout(G, seed=42)
     color_map = []
-    
     for node in G.nodes():
         status = G.nodes[node].get('status')
-        if status == 'Isolated':
-            color_map.append('gray')
-        elif status == 'Compromised':
-            color_map.append('darkred')
-        elif status == 'Warning':
-            color_map.append('orange')
-        elif status == 'Malicious':
-            color_map.append('purple')
-        elif node == 'IDS':
-            color_map.append('red')
-        else:
-            color_map.append('lightblue')
+        if status == 'Isolated': color_map.append('gray')
+        elif status == 'Compromised': color_map.append('darkred')
+        elif status == 'Warning': color_map.append('orange')
+        elif status == 'Malicious': color_map.append('purple')
+        elif node == 'IDS': color_map.append('red')
+        else: color_map.append('lightblue')
 
     nx.draw(G, pos, with_labels=True, node_color=color_map, 
             node_size=2200, font_size=9, font_weight='bold', edge_color='gray')
-    
     edge_labels = nx.get_edge_attributes(G, 'weight')
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
-    
     plt.title(title)
     plt.axis('off')
     plt.show()
 
-# ==================== سناریوی چندین حمله ====================
+# ==================== سناریو ====================
 def run_multi_attack_scenario(attacks):
     print("🚀 شروع سناریوی چندین حمله...\n")
     for i, (target, intensity) in enumerate(attacks, 1):
         print(f"\n--- حمله شماره {i} ---")
         simulate_attack(G, "Attacker", target, intensity)
-    
-    print("\n" + "="*70)
-    print("📋 تاریخچه کامل وقایع:")
-    for event in event_log:
-        print(event)
+        show_cli_dashboard()   # نمایش داشبورد بعد از هر حمله
 
 # ==================== اجرا ====================
 attacks_list = [
@@ -126,6 +169,11 @@ attacks_list = [
     ("Laptop", "High")
 ]
 
+show_cli_dashboard()                    # داشبورد اولیه
 draw_digital_twin(G, "Cyber Digital Twin - Initial State")
+
 run_multi_attack_scenario(attacks_list)
-draw_digital_twin(G, "Cyber Digital Twin - After Multiple Attacks")
+
+print("\n✅ شبیه‌سازی کامل شد.")
+show_cli_dashboard()                    # داشبورد نهایی
+draw_digital_twin(G, "Cyber Digital Twin - Final State")
